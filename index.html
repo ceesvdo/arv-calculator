@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ARV Calculator — Den Haag</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #F5F2EC;
+    --surface: #FFFFFF;
+    --surface2: #EFECE4;
+    --ink: #1A1A14;
+    --ink2: #6B6860;
+    --ink3: #A09D97;
+    --accent: #1E4E3A;
+    --accent-light: #EAF3DE;
+    --accent-mid: #3B6D11;
+    --danger: #7A1F1F;
+    --danger-light: #FCEBEB;
+    --warn: #7A5200;
+    --warn-light: #FAEEDA;
+    --border: rgba(26,26,20,0.10);
+    --border-strong: rgba(26,26,20,0.20);
+    --radius: 6px;
+    --radius-lg: 12px;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  /* Header */
+  header {
+    background: var(--accent);
+    color: #fff;
+    padding: 2.5rem 2rem 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+  header::after {
+    content: 'DEN HAAG';
+    position: absolute;
+    right: -10px;
+    top: 50%;
+    transform: translateY(-50%) rotate(90deg);
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    color: rgba(255,255,255,0.12);
+    font-family: 'DM Mono', monospace;
+    white-space: nowrap;
+  }
+  .header-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    color: rgba(255,255,255,0.55);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  header h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2.2rem;
+    font-weight: 400;
+    line-height: 1.15;
+    color: #fff;
+    margin-bottom: 6px;
+  }
+  header h1 em {
+    font-style: italic;
+    color: rgba(255,255,255,0.7);
+  }
+  .header-sub {
+    font-size: 13px;
+    color: rgba(255,255,255,0.55);
+    max-width: 480px;
+  }
+
+  /* Layout */
+  .layout {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 0;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 2rem;
+    align-items: start;
+  }
+
+  @media (max-width: 760px) {
+    .layout { grid-template-columns: 1fr; padding: 1rem; }
+    header { padding: 1.5rem 1rem; }
+    header h1 { font-size: 1.6rem; }
+  }
+
+  /* Cards */
+  .card {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    margin-bottom: 1rem;
+  }
+  .card-header {
+    padding: 1rem 1.25rem 0.75rem;
+    border-bottom: 0.5px solid var(--border);
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+  .card-num {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.4rem;
+    color: var(--accent);
+    line-height: 1;
+  }
+  .card-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink2);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .card-body { padding: 1.25rem; }
+
+  /* Wijk grid */
+  .wijk-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  @media (max-width: 500px) { .wijk-grid { grid-template-columns: 1fr; } }
+
+  .wijk-btn {
+    background: var(--surface2);
+    border: 1px solid transparent;
+    border-radius: var(--radius);
+    padding: 10px 12px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.12s ease;
+    font-family: inherit;
+  }
+  .wijk-btn:hover { border-color: var(--border-strong); background: var(--surface); }
+  .wijk-btn.selected {
+    background: var(--accent-light);
+    border-color: var(--accent-mid);
+  }
+  .wijk-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink);
+    display: block;
+    margin-bottom: 2px;
+  }
+  .wijk-btn.selected .wijk-name { color: var(--accent); }
+  .wijk-m2 {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--ink2);
+    display: block;
+  }
+  .wijk-trend {
+    font-size: 11px;
+    color: var(--accent-mid);
+    margin-top: 2px;
+    display: block;
+  }
+
+  .or-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 1rem 0 0.75rem;
+    font-size: 12px;
+    color: var(--ink3);
+  }
+  .or-row::before, .or-row::after {
+    content: '';
+    flex: 1;
+    height: 0.5px;
+    background: var(--border);
+  }
+
+  /* Inputs */
+  .input-group { margin-bottom: 1rem; }
+  .input-group label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ink2);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 6px;
+  }
+  .input-wrap { position: relative; }
+  .input-prefix {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: var(--ink3);
+    pointer-events: none;
+  }
+  input[type=number], input[type=text] {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 12px 10px 26px;
+    font-family: 'DM Mono', monospace;
+    font-size: 14px;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.12s;
+    -moz-appearance: textfield;
+  }
+  input[type=number]::-webkit-inner-spin-button,
+  input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
+  input:focus { border-color: var(--accent); background: #fff; }
+  input.no-prefix { padding-left: 12px; }
+  .input-hint { font-size: 11px; color: var(--ink3); margin-top: 4px; }
+
+  /* Results panel */
+  .results-panel { position: sticky; top: 2rem; }
+
+  .result-empty {
+    text-align: center;
+    padding: 2rem 1rem;
+    color: var(--ink3);
+    font-size: 13px;
+    line-height: 1.8;
+  }
+  .result-empty .arrow { font-size: 1.5rem; color: var(--border-strong); display: block; margin-bottom: 8px; }
+
+  /* Metric */
+  .metric-block {
+    border-bottom: 0.5px solid var(--border);
+    padding: 1rem 1.25rem;
+  }
+  .metric-block:last-child { border-bottom: none; }
+  .metric-label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 2px;
+  }
+  .metric-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--ink3);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .metric-badge {
+    font-size: 10px;
+    font-family: 'DM Mono', monospace;
+    padding: 2px 6px;
+    border-radius: 3px;
+    background: var(--surface2);
+    color: var(--ink2);
+  }
+  .metric-value {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.9rem;
+    line-height: 1.1;
+    color: var(--ink);
+  }
+  .metric-value.accent { color: var(--accent); }
+  .metric-value.good { color: var(--accent-mid); }
+  .metric-value.bad { color: var(--danger); }
+  .metric-sub {
+    font-size: 11px;
+    font-family: 'DM Mono', monospace;
+    color: var(--ink3);
+    margin-top: 3px;
+  }
+
+  /* ARV highlight */
+  .arv-block {
+    background: var(--accent);
+    padding: 1.25rem;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  }
+  .arv-block .metric-label { color: rgba(255,255,255,0.55); }
+  .arv-block .metric-value { color: #fff; font-size: 2.2rem; }
+  .arv-block .metric-sub { color: rgba(255,255,255,0.45); }
+
+  /* Verdict */
+  .verdict {
+    margin: 0;
+    padding: 1rem 1.25rem;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.5;
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  }
+  .verdict.ok { background: var(--accent-light); color: var(--accent); }
+  .verdict.warn { background: var(--warn-light); color: var(--warn); }
+  .verdict.bad { background: var(--danger-light); color: var(--danger); }
+
+  /* Cost breakdown */
+  .bar-row { margin-bottom: 10px; }
+  .bar-label-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--ink2);
+    margin-bottom: 4px;
+  }
+  .bar-label-row span:last-child {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+  }
+  .bar-track {
+    background: var(--surface2);
+    border-radius: 2px;
+    height: 3px;
+  }
+  .bar-fill {
+    height: 3px;
+    border-radius: 2px;
+    background: var(--accent);
+    transition: width 0.3s ease;
+  }
+
+  /* Footer */
+  .source-note {
+    font-size: 11px;
+    color: var(--ink3);
+    padding: 1rem 1.25rem;
+    line-height: 1.7;
+    border-top: 0.5px solid var(--border);
+  }
+
+  /* Rule explainer */
+  .rule-pill {
+    display: inline-block;
+    font-size: 11px;
+    font-family: 'DM Mono', monospace;
+    background: var(--accent-light);
+    color: var(--accent);
+    border-radius: 4px;
+    padding: 2px 8px;
+    margin-bottom: 8px;
+  }
+  .rule-text {
+    font-size: 12px;
+    color: var(--ink2);
+    line-height: 1.7;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-label">Vastgoed · Fix &amp; Flip</div>
+  <h1>ARV Calculator<br><em>Den Haag</em></h1>
+  <p class="header-sub">Bereken de geschatte verkoopprijs na verbouwing en toets het rendement van een flip-project.</p>
+</header>
+
+<div class="layout">
+
+  <!-- LEFT: Inputs -->
+  <div class="left-col" style="padding-right: 2rem;">
+
+    <!-- Stap 1: Wijk -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-num">1</span>
+        <span class="card-title">Kies wijk — m²-prijs gerenoveerd</span>
+      </div>
+      <div class="card-body">
+        <div class="wijk-grid" id="wijk-grid"></div>
+
+        <div class="or-row">of voer zelf in</div>
+
+        <div class="input-group">
+          <label>Eigen m²-prijs (gerenoveerd)</label>
+          <div class="input-wrap">
+            <span class="input-prefix">€</span>
+            <input type="number" id="custom-price" placeholder="bijv. 4500" step="100" oninput="onCustomPrice()">
+          </div>
+          <div class="input-hint">Gebruik recente Funda-verkopen in dezelfde straat als referentie</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stap 2: Pand -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-num">2</span>
+        <span class="card-title">Gegevens pand</span>
+      </div>
+      <div class="card-body">
+        <div class="input-group">
+          <label>Aankoopprijs</label>
+          <div class="input-wrap">
+            <span class="input-prefix">€</span>
+            <input type="number" id="purchase-price" placeholder="250000" step="1000" oninput="calculate()">
+          </div>
+        </div>
+        <div class="input-group">
+          <label>Oppervlakte</label>
+          <div class="input-wrap">
+            <span class="input-prefix" style="font-size:11px;">m²</span>
+            <input type="number" id="surface" placeholder="80" oninput="calculate()">
+          </div>
+        </div>
+        <div class="input-group">
+          <label>Verbouwingskosten</label>
+          <div class="input-wrap">
+            <span class="input-prefix">€</span>
+            <input type="number" id="reno-cost" placeholder="45000" step="1000" oninput="calculate()">
+          </div>
+          <div class="input-hint">Gedeeltelijk: €400–700/m² · Compleet: €700–1.100/m² · +20% buffer aanbevolen</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Uitleg -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-num" style="font-size:1rem;">?</span>
+        <span class="card-title">Hoe werkt dit</span>
+      </div>
+      <div class="card-body">
+        <div style="margin-bottom: 1rem;">
+          <span class="rule-pill">ARV</span>
+          <p class="rule-text"><strong>After Repair Value</strong> — de marktwaarde van het pand ná verbouwing, berekend op basis van de gemiddelde m²-prijs van gerenoveerde woningen in dezelfde wijk.</p>
+        </div>
+        <div>
+          <span class="rule-pill">70%-regel</span>
+          <p class="rule-text">De standaard instapcheck voor flippers: <strong>max. aankoopprijs = (ARV × 70%) − verbouwing</strong>. De 30% marge dekt overdrachtsbelasting (10,4%), makelaarskosten, financiering en onvoorziene kosten.</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- RIGHT: Results -->
+  <div class="results-panel">
+
+    <div id="empty-state" class="card">
+      <div class="result-empty">
+        <span class="arrow">↖</span>
+        Selecteer een wijk en vul<br>de gegevens in om het<br>rendement te berekenen.
+      </div>
+    </div>
+
+    <div id="results-block" style="display:none;">
+
+      <!-- ARV + verdict -->
+      <div class="card" style="overflow:hidden; border-radius: var(--radius-lg);">
+        <div class="arv-block">
+          <div class="metric-label-row">
+            <span class="metric-label" style="color:rgba(255,255,255,0.55);">ARV — verkoopprijs na verbouwing</span>
+          </div>
+          <div class="metric-value" id="arv">—</div>
+          <div class="metric-sub" id="arv-sub"> </div>
+        </div>
+        <div id="verdict-box" class="verdict ok"></div>
+      </div>
+
+      <!-- Key metrics -->
+      <div class="card">
+        <div class="metric-block">
+          <div class="metric-label-row">
+            <span class="metric-label">Totale investering</span>
+            <span class="metric-badge">incl. OVB + kosten</span>
+          </div>
+          <div class="metric-value" id="total-inv">—</div>
+          <div class="metric-sub" id="total-inv-sub"> </div>
+        </div>
+        <div class="metric-block">
+          <div class="metric-label-row">
+            <span class="metric-label">Bruto winst</span>
+            <span class="metric-badge" id="margin-badge"> </span>
+          </div>
+          <div class="metric-value" id="gross-profit">—</div>
+          <div class="metric-sub" id="profit-sub"> </div>
+        </div>
+        <div class="metric-block">
+          <div class="metric-label-row">
+            <span class="metric-label">Max. aankoopprijs</span>
+            <span class="metric-badge">70%-regel</span>
+          </div>
+          <div class="metric-value" id="max-purchase">—</div>
+          <div class="metric-sub" id="max-sub"> </div>
+        </div>
+      </div>
+
+      <!-- Kostenverdeling -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Kostenverdeling</span>
+        </div>
+        <div class="card-body" id="cost-breakdown"></div>
+        <div class="source-note">
+          Wijkprijzen: NVM Haaglanden Q2 2025 · verkoopmakelaaroffertes.nl · huisverkopen.nl feb 2026.<br>
+          Indicatief — valideer met recente Funda-verkopen in dezelfde straat.
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+const wijken = [
+  { name: 'Laak / Binckhorst',       m2: 3700, trend: '+17% YoY', note: 'Sterkste groeier' },
+  { name: 'Schilderswijk',            m2: 3900, trend: '+12% YoY', note: 'Veel potentie' },
+  { name: 'Transvaal',                m2: 3800, trend: '+11% YoY', note: 'Betaalbaar, opkomend' },
+  { name: 'Escamp',                   m2: 3750, trend: '+16% YoY', note: 'Populair bij starters' },
+  { name: 'Regentesse / Valkenbosk', m2: 4600, trend: '+9% YoY',  note: 'Jaren 30, gewild' },
+  { name: 'Segbroek / Bomenbuurt',   m2: 4800, trend: '+8% YoY',  note: 'Sfeervolle straten' },
+  { name: 'Zeeheldenkwartier',        m2: 5400, trend: '+8% YoY',  note: 'Weinig aanbod' },
+  { name: 'Bezuidenhout',             m2: 4163, trend: '+7% YoY',  note: 'Stabiel segment' },
+  { name: 'Scheveningen',             m2: 4786, trend: '+6% YoY',  note: 'Kust, solide' },
+  { name: 'Benoordenhout',            m2: 4587, trend: '+6% YoY',  note: 'Haagse Hout' },
+  { name: 'Statenkwartier',           m2: 6800, trend: '+5% YoY',  note: 'Expats, duur' },
+  { name: 'Archipelbuurt',            m2: 7200, trend: '+4% YoY',  note: 'Duurste buurt' },
+  { name: 'Rijswijk',                 m2: 4301, trend: '+8% YoY',  note: '#4 verhitst NL, 10% overbod' },
+];
+
+let selectedWijk = null;
+
+function fmt(n) {
+  if (n === null || isNaN(n)) return '—';
+  return '€\u202F' + Math.round(n).toLocaleString('nl-NL');
+}
+
+function buildGrid() {
+  const grid = document.getElementById('wijk-grid');
+  grid.innerHTML = wijken.map((w, i) => `
+    <button class="wijk-btn" id="wb-${i}" onclick="selectWijk(${i})">
+      <span class="wijk-name">${w.name}</span>
+      <span class="wijk-m2">€${w.m2.toLocaleString('nl-NL')}/m²</span>
+      <span class="wijk-trend">${w.trend} · ${w.note}</span>
+    </button>
+  `).join('');
+}
+
+function selectWijk(i) {
+  selectedWijk = i;
+  document.querySelectorAll('.wijk-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('wb-' + i).classList.add('selected');
+  document.getElementById('custom-price').value = '';
+  calculate();
+}
+
+function onCustomPrice() {
+  selectedWijk = null;
+  document.querySelectorAll('.wijk-btn').forEach(b => b.classList.remove('selected'));
+  calculate();
+}
+
+function getM2() {
+  const c = parseFloat(document.getElementById('custom-price').value);
+  if (c > 0) return c;
+  if (selectedWijk !== null) return wijken[selectedWijk].m2;
+  return null;
+}
+
+function calculate() {
+  const m2 = getM2();
+  const surface = parseFloat(document.getElementById('surface').value);
+  const purchase = parseFloat(document.getElementById('purchase-price').value);
+  const reno = parseFloat(document.getElementById('reno-cost').value) || 0;
+
+  const empty = document.getElementById('empty-state');
+  const res = document.getElementById('results-block');
+
+  if (!m2) { empty.style.display = 'block'; res.style.display = 'none'; return; }
+  if (!surface || !purchase) { empty.style.display = 'block'; res.style.display = 'none'; return; }
+
+  empty.style.display = 'none';
+  res.style.display = 'block';
+
+  const arv = surface * m2;
+  const ovb = purchase * 0.104;
+  const notaris = 2000;
+  const makelaar = arv * 0.015;
+  const totalInv = purchase + ovb + notaris + reno + makelaar;
+  const profit = arv - totalInv;
+  const marginPct = (profit / arv) * 100;
+  const maxPurchase = (arv * 0.70) - reno;
+  const renoPm2 = reno > 0 ? Math.round(reno / surface) : null;
+
+  document.getElementById('arv').textContent = fmt(arv);
+  document.getElementById('arv-sub').textContent =
+    '€' + Math.round(m2).toLocaleString('nl-NL') + '/m² × ' + surface + ' m²' +
+    (selectedWijk !== null ? ' · ' + wijken[selectedWijk].name : '');
+
+  document.getElementById('total-inv').textContent = fmt(totalInv);
+  document.getElementById('total-inv-sub').textContent =
+    'OVB ' + fmt(ovb) + ' · notaris €2.000 · makelaar ' + fmt(makelaar);
+
+  const profitEl = document.getElementById('gross-profit');
+  profitEl.textContent = fmt(profit);
+  profitEl.className = 'metric-value' + (profit > 0 ? ' good' : ' bad');
+  document.getElementById('margin-badge').textContent = Math.round(marginPct) + '% marge';
+  document.getElementById('profit-sub').textContent = profit > 0
+    ? 'Vóór belasting (box 1 / BV afhankelijk van structuur)'
+    : 'Verlieslatend op basis van huidige invoer';
+
+  const maxEl = document.getElementById('max-purchase');
+  maxEl.textContent = fmt(maxPurchase);
+  maxEl.className = 'metric-value' + (purchase <= maxPurchase ? ' good' : ' bad');
+  document.getElementById('max-sub').textContent = purchase <= maxPurchase
+    ? 'Aankoopprijs past ✓'
+    : 'Aankoopprijs ' + fmt(purchase - maxPurchase) + ' te hoog ✗';
+
+  // Verdict
+  let vClass = 'ok', vText = '';
+  if (profit > 0 && purchase <= maxPurchase && marginPct >= 15) {
+    vClass = 'ok';
+    vText = `Solide project — ${Math.round(marginPct)}% marge en aankoopprijs binnen de 70%-regel.`;
+  } else if (profit > 0 && marginPct < 15) {
+    vClass = 'warn';
+    vText = `Krappe marge van ${Math.round(marginPct)}%. Streef naar minimaal 15% — één tegenvaller slurpt dit op.`;
+  } else if (purchase > maxPurchase) {
+    vClass = 'bad';
+    vText = `Aankoopprijs is ${fmt(purchase - maxPurchase)} te hoog voor de 70%-regel. Te weinig buffer.`;
+  } else {
+    vClass = 'bad';
+    vText = 'Project is verlieslatend op basis van deze cijfers.';
+  }
+  const vBox = document.getElementById('verdict-box');
+  vBox.className = 'verdict ' + vClass;
+  vBox.textContent = vText;
+
+  // Breakdown
+  const items = [
+    { label: 'Aankoopprijs', amount: purchase },
+    { label: 'Overdrachtsbelasting (10,4%)', amount: ovb },
+    { label: 'Notaris / due diligence', amount: notaris },
+    { label: renoPm2 ? `Verbouwing (€${renoPm2.toLocaleString('nl-NL')}/m²)` : 'Verbouwing', amount: reno },
+    { label: 'Makelaarskosten verkoop (1,5%)', amount: makelaar },
+  ];
+  const maxAmt = Math.max(...items.map(x => x.amount));
+  document.getElementById('cost-breakdown').innerHTML = items.map(it => `
+    <div class="bar-row">
+      <div class="bar-label-row">
+        <span>${it.label}</span>
+        <span>${fmt(it.amount)}</span>
+      </div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:${Math.round((it.amount / maxAmt) * 100)}%"></div>
+      </div>
+    </div>
+  `).join('');
+}
+
+buildGrid();
+</script>
+</body>
+</html>
